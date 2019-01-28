@@ -3,8 +3,8 @@
 import cv2
 import imutils
 import numpy as np
-import pytesseract
-from PIL import Image
+# import pytesseract
+from PIL import Image, ImageFilter
 import matplotlib as plt
 
 
@@ -55,6 +55,7 @@ def order_points(pts):
 	# return the ordered coordinates
 	return rect
 
+
 def four_point_transform(image, pts):
 	# obtain a consistent order of the points and unpack them
 	# individually
@@ -93,12 +94,11 @@ def four_point_transform(image, pts):
 	# return the warped image
 	return warped
 
-def crop_double_page(filepath):
 
-	file_root = filepath.split('/')[-1].split('.')[0]
+def crop_double_page(input_filepath, output_filepath, preview=False):
 
 	# read image from filepath
-	image = cv2.imread(filepath)
+	image = cv2.imread(input_filepath)
 
 	ratio = image.shape[0] / 500.0
 	orig = image.copy()
@@ -112,7 +112,14 @@ def crop_double_page(filepath):
 	)
 
 	# https://docs.opencv.org/3.3.1/d4/d73/tutorial_py_contours_begin.html
-	img, cnts, hierarchy = cv2.findContours(
+	# opencv 3.1
+	# img, cnts, hierarchy = cv2.findContours(
+	# 	edged.copy(), # source image
+	# 	cv2.RETR_LIST, # contour retrieval mode
+	# 	cv2.CHAIN_APPROX_SIMPLE # contour approximation method
+	# )
+	# opencv 4.x
+	cnts, hierarchy = cv2.findContours(
 		edged.copy(), # source image
 		cv2.RETR_LIST, # contour retrieval mode
 		cv2.CHAIN_APPROX_SIMPLE # contour approximation method
@@ -121,16 +128,34 @@ def crop_double_page(filepath):
 	# sort the contours
 	cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
 	for c in cnts:
-	    peri = cv2.arcLength(c, True)
-	    approx = cv2.approxPolyDP(c, 0.02 * peri, True)
-	    if len(approx) == 4:
-	        screenCnt = approx
-	        break
+		peri = cv2.arcLength(c, True)
+		approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+		if len(approx) == 4:
+			screenCnt = approx
+			break
 
 	warped = four_point_transform(orig, screenCnt.reshape(4, 2) * ratio)
 
 	# preview
-	# imgplot = plt.imshow(warped)
+	if preview:
+		imgplot = plt.imshow(warped)
 
 	# write
-	cv2.imwrite('%s/%s_cropped.jpg' % ('/home/commander/Pictures/digitization/the_pilot/natural_light/cropped',file_root), warped)
+	else:
+		cv2.imwrite(output_filepath, warped)
+
+
+def sharpen_image(input_filepath, output_filepath):
+
+	print('sharpening...')
+
+	# open image
+	img = Image.open(input_filepath)
+
+	# sharpen
+	img_sharp = img.filter(ImageFilter.SHARPEN)
+
+	# write
+	img_sharp.save(output_filepath)
+
+

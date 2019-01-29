@@ -1,38 +1,19 @@
-# bg crop
+# crop
 
 import cv2
+from distutils.version import StrictVersion
 import imutils
-import numpy as np
-# import pytesseract
-from PIL import Image, ImageFilter
 import matplotlib as plt
+import numpy as np
+from PIL import Image
 
 
 def order_points(pts):
-	# initialzie a list of coordinates that will be ordered
-	# such that the first entry in the list is the top-left,
-	# the second entry is the top-right, the third is the
-	# bottom-right, and the fourth is the bottom-left
-	rect = np.zeros((4, 2), dtype = "float32")
 
-	# the top-left point will have the smallest sum, whereas
-	# the bottom-right point will have the largest sum
-	s = pts.sum(axis = 1)
-	rect[0] = pts[np.argmin(s)]
-	rect[2] = pts[np.argmax(s)]
+	'''
+	https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
+	'''
 
-	# now, compute the difference between the points, the
-	# top-right point will have the smallest difference,
-	# whereas the bottom-left will have the largest difference
-	diff = np.diff(pts, axis = 1)
-	rect[1] = pts[np.argmin(diff)]
-	rect[3] = pts[np.argmax(diff)]
-
-	# return the ordered coordinates
-	return rect
-
-
-def order_points(pts):
 	# initialzie a list of coordinates that will be ordered
 	# such that the first entry in the list is the top-left,
 	# the second entry is the top-right, the third is the
@@ -57,6 +38,11 @@ def order_points(pts):
 
 
 def four_point_transform(image, pts):
+
+	'''
+	https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
+	'''
+
 	# obtain a consistent order of the points and unpack them
 	# individually
 	rect = order_points(pts)
@@ -95,7 +81,14 @@ def four_point_transform(image, pts):
 	return warped
 
 
-def crop_double_page(input_filepath, output_filepath, preview=False):
+def crop_black_bg(
+	input_filepath,
+	output_filepath,
+	preview=False):
+
+	'''
+	Crop away black background, transforming and rotating as well
+	'''
 
 	# read image from filepath
 	image = cv2.imread(input_filepath)
@@ -112,18 +105,22 @@ def crop_double_page(input_filepath, output_filepath, preview=False):
 	)
 
 	# https://docs.opencv.org/3.3.1/d4/d73/tutorial_py_contours_begin.html
+
 	# opencv 3.1
-	# img, cnts, hierarchy = cv2.findContours(
-	# 	edged.copy(), # source image
-	# 	cv2.RETR_LIST, # contour retrieval mode
-	# 	cv2.CHAIN_APPROX_SIMPLE # contour approximation method
-	# )
+	if StrictVersion(cv2.__version__) < StrictVersion('4.0'):
+		img, cnts, hierarchy = cv2.findContours(
+			edged.copy(), # source image
+			cv2.RETR_LIST, # contour retrieval mode
+			cv2.CHAIN_APPROX_SIMPLE # contour approximation method
+		)
+
 	# opencv 4.x
-	cnts, hierarchy = cv2.findContours(
-		edged.copy(), # source image
-		cv2.RETR_LIST, # contour retrieval mode
-		cv2.CHAIN_APPROX_SIMPLE # contour approximation method
-	)
+	elif StrictVersion(cv2.__version__) >= StrictVersion('4.0'):
+		cnts, hierarchy = cv2.findContours(
+			edged.copy(), # source image
+			cv2.RETR_LIST, # contour retrieval mode
+			cv2.CHAIN_APPROX_SIMPLE # contour approximation method
+		)
 
 	# sort the contours
 	cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
@@ -143,19 +140,9 @@ def crop_double_page(input_filepath, output_filepath, preview=False):
 	# write
 	else:
 		cv2.imwrite(output_filepath, warped)
+		return output_filepath
 
 
-def sharpen_image(input_filepath, output_filepath):
 
-	print('sharpening...')
-
-	# open image
-	img = Image.open(input_filepath)
-
-	# sharpen
-	img_sharp = img.filter(ImageFilter.SHARPEN)
-
-	# write
-	img_sharp.save(output_filepath)
 
 

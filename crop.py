@@ -81,7 +81,7 @@ def four_point_transform(image, pts):
 	return warped
 
 
-def crop_black_bg(
+def crop_and_rotate(
 	input_filepath,
 	output_filepath,
 	preview=False):

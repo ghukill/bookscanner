@@ -6,50 +6,56 @@ import imutils
 import logging
 import matplotlib as plt
 import numpy as np
-from PIL import Imag
+from PIL import Image
 import os
 
 
 
 def split_page(
 	input_filepath,
-	cross_section_height=10,
+	cross_section_height=500,
 	kernel_size=3):
 
-	print(input_filepath)
+	'''
+	Focus on area roughly in the middle, 1500-2500
+		- will be better to handle % of image.shape
+	'''
+
 
 	# read image from filepath
 	image = cv2.imread(input_filepath,0)
 
-	# get horizontal gradient
-	# sobelx = cv2.Sobel(
-	# 	image[0:cross_section_height, 100:3142],
-	# 	cv2.CV_64F,
-	# 	1,
-	# 	0,
-	# 	ksize=kernel_size
-	# )
-	sobelx = cv2.Sobel(
-		image,
-		cv2.CV_64F,
-		1,
-		0,
-		ksize=kernel_size
-	)
+	# make sure double page
+	if image.shape[1] - image.shape[0] > 1000:
 
-	# sum columns
-	col_sums = np.sum(sobelx, axis=0)
+		# debug
+		print(input_filepath, image.shape)
 
-	# plot
-	# plt.plot(col_sums)
+		if cross_section_height == None:
+			cross_section_height = image.shape[0]
 
-	# get center line
-	cl_index = np.argmax(col_sums)
+		# get horizontal gradient
+		sobelx = cv2.Sobel(
+			image[0:cross_section_height, 1500:2500],
+			cv2.CV_64F,
+			1,
+			0,
+			ksize=kernel_size
+		)
 
-	# check
-	print(cl_index / image.shape[1])
+		# sum columns
+		col_sums = np.sum(sobelx, axis=0)
 
-	return (col_sums, cl_index)
+		# plot
+		# plt.plot(col_sums)
+
+		# get center line
+		cl_index = np.argmax(col_sums)
+
+		# check
+		print( (cl_index + 1500) / image.shape[1])
+
+		return (col_sums, cl_index)
 
 
 

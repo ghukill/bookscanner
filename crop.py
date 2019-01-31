@@ -3,9 +3,18 @@
 import cv2
 from distutils.version import StrictVersion
 import imutils
+import logging
 import matplotlib as plt
 import numpy as np
 from PIL import Image
+
+
+# setup logger
+logging.basicConfig(level=logging.DEBUG)
+# parso shims
+logging.getLogger('parso.python.diff').disabled = True
+logging.getLogger('parso.cache').disabled = True
+logger = logging.getLogger(__name__)
 
 
 def order_points(pts):
@@ -88,19 +97,38 @@ def crop_and_rotate(
 
 	'''
 	Crop away black background, transforming and rotating as well
+
+	Looking for contours in this range:
+	169700.0
+	169688.0
+	17359.0
+	17356.0
+	15537.5
+
+	These are too small:
+	4747.0
+	4710.0
+	2130.5
+	1864.0
+	581.0
 	'''
 
 	# read image from filepath
 	image = cv2.imread(input_filepath)
 
+	# resize
 	ratio = image.shape[0] / 500.0
 	orig = image.copy()
 	image = imutils.resize(image, height=500)
 
+	# blur to help with edge detection
+	# image = cv2.blur(image,(2,2))
+	image = cv2.GaussianBlur(image,(5,5),0)
+
 	# https://docs.opencv.org/3.1.0/da/d22/tutorial_py_canny.html
 	edged = cv2.Canny(
 		image, # input image
-		75, # minVal
+		50, # minVal
 		200 # maxVal
 	)
 
@@ -124,6 +152,10 @@ def crop_and_rotate(
 
 	# sort the contours
 	cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
+
+	# NEED TO CONFIRM CONTOUR LARGE ENOUGH
+
+	# find rectangle?
 	for c in cnts:
 		peri = cv2.arcLength(c, True)
 		approx = cv2.approxPolyDP(c, 0.02 * peri, True)

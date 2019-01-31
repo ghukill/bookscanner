@@ -14,6 +14,9 @@ from enhance import sharpen_image
 %pylab
 input_path = 'data/natural_light'
 output_path = 'data/natural_light_done'
+
+from bookscanner import *
+process_issue_folder(input_path, output_path)
 '''
 
 
@@ -53,7 +56,7 @@ def process_issue_folder(input_path, output_path):
 		# page path
 		input_page_path = os.path.join(input_path, page)
 		output_page_path = os.path.join(output_path, page)
-		logging.debug('working on page: %s, %s/%s' % (page,i,img_num))
+		logging.debug('working on scanned page: %s, %s/%s' % (page,i,img_num))
 
 		# crop and rotate
 		logger.debug('cropping and rotating')

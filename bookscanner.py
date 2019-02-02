@@ -6,6 +6,7 @@ import os
 # modules
 from crop import crop_and_rotate
 from enhance import sharpen_image
+from split import split_page
 
 
 '''
@@ -66,5 +67,7 @@ def process_issue_folder(input_path, output_path):
 		logger.debug('sharpening')
 		sharpen_image(output_page_path, output_page_path)
 
-
+		# split
+		logger.debug('splitting page')
+		split_page(output_page_path)
 

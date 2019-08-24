@@ -7,6 +7,7 @@ import logging
 import matplotlib as plt
 import numpy as np
 from PIL import Image
+import re
 
 
 # setup logger
@@ -153,7 +154,7 @@ def crop_and_rotate(
 	# sort the contours
 	cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
 
-	# NEED TO CONFIRM CONTOUR LARGE ENOUGH
+	#TODO: NEED TO CONFIRM CONTOUR LARGE ENOUGH
 
 	# find rectangle?
 	for c in cnts:
@@ -163,7 +164,21 @@ def crop_and_rotate(
 			screenCnt = approx
 			break
 
+	# warp
 	warped = four_point_transform(orig, screenCnt.reshape(4, 2) * ratio)
+
+	# DEBUG and QA
+	logger.debug(f'orientation_ratio: {warped.shape[1] / warped.shape[0]}, rect peri: {peri}')
+	if (warped.shape[1] / warped.shape[0]) > 1 and peri < 1500:
+		error_filepath = re.sub(r'(.*)/(.*)', r'\1/ERROR__rect_peri_too_small__\2', output_filepath)
+		cv2.imwrite(error_filepath, orig)
+		raise Exception(f'ERROR: found rect peri seems too small: {peri}')
+
+	logger.debug(f'warped shape: {warped.shape}')
+	if warped.shape[0] < 1700:
+		error_filepath = re.sub(r'(.*)/(.*)', r'\1/ERROR__rect_height_too_small__\2', output_filepath)
+		cv2.imwrite(error_filepath, orig)
+		raise Exception(f'ERROR: found rectangle height seems too small: {warped.shape}')
 
 	# preview
 	if preview:
